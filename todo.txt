@@ -1,0 +1,25 @@
+[backend]
+1. autocomplete with parse db and use own
+2. affiliate links
+3. search wine with wine name and producer
+4. use wein.cc API and save all search request in own db
+5. send request to API when the user is adding a wine to the list
+6. prioritize:
+    - between two similar wine shops belong, prioritize shop with own affiliate link
+    1) the highest number wines of shop that selling all
+    2) if not a shop which sold all, show combination of wine shop which selling all
+    3) show wine shop even if shop selling only one of the wines
+
+[frontend]
+1. add more wines in wishlist
+2. toggle with option 'vintage' (from some year)
+3. edit the data fields forms (producer, wine name and optional: vintage) from wishlist
+4. info about each wine shop (name, how many wines, link to wine shop)
+5. link to each wine (opens in a new tab)
+6. choose vintage (year and bottle size)
+7. delete row in the wishlist and ask before it
+8. choose a country for search
+9. send wishlist to email
+
+[post-mvc]
+1. supported avoid types

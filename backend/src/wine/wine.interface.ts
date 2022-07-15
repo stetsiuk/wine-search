@@ -7,7 +7,7 @@ export interface IWine {
 	preis: number;
 	jahrgang: string;
 	merchanturl: string;
-	kategorie: [string];
+	kategorie: string | [string];
 	rebsorte: string | [string];
 	quantity: string;
 	liter: number;

@@ -3,7 +3,7 @@ import React from 'react';
 function App() {
 	return (
 		<div>
-			Hi
+			<input list="europe-countries" placeholder="Start typing..." type="text" multiple/>
 		</div>
 	);
 }
