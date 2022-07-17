@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from "@nestjs/axios";
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { WineService } from './wine.service';
 import { WineController } from "./wine.controller";
+import { WineService } from './wine.service';
 import { Wine } from './wine.entity';
-import { RequestModule } from '../request/request.module';
+
+import { ProducerModule } from '../producer/producer.module';
 import { CategoryModule } from '../category/category.module';
+import { RequestModule } from '../request/request.module';
 import { SortModule } from '../sort/sort.module';
 
 @Module({
@@ -15,7 +17,8 @@ import { SortModule } from '../sort/sort.module';
       HttpModule,
       RequestModule,
       CategoryModule,
-      SortModule
+      SortModule,
+      ProducerModule
   ],
   controllers: [WineController],
   providers: [WineService]

@@ -5,23 +5,28 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 	JoinColumn,
-	ManyToMany
+	ManyToMany,
+	JoinTable, Index
 } from 'typeorm';
 
 import { Partner } from '../partner/partner.entity';
 import { Category } from '../category/category.entity';
 import { Sort } from '../sort/sort.entity';
+import { Producer } from '../producer/producer.entity';
+
 
 @Entity()
 export class Wine {
 	@PrimaryGeneratedColumn()
 	id: number
 
+	@Index()
+	@Column({name: 'article_number', unique: true})
+	articleNumber: string
+
+	@Index()
 	@Column()
 	name: string
-
-	@Column()
-	producer: string
 
 	@Column({nullable: true})
 	vintage: number
@@ -39,16 +44,22 @@ export class Wine {
 	quantity: number
 
 	@ManyToMany(() => Category, {eager: true, nullable: true})
+	@JoinTable()
 	categories: Category[]
 
 	@ManyToMany(() => Sort, {eager: true, nullable: true})
+	@JoinTable()
 	sorts: Sort[]
 
-	@Column({nullable: true})
+	@ManyToOne(() => Producer, (producer) => producer.name, {eager: true, nullable: true})
+	@JoinColumn({name: 'producer'})
+	producer: Producer
+
+	@Column({name: 'partner_id', nullable: true})
 	partnerId: number
 
 	@ManyToOne(() => Partner)
-	@JoinColumn()
+	@JoinColumn({name: 'partner_id'})
 	partner: Partner
 
 	@Column({nullable: true})
@@ -72,6 +83,6 @@ export class Wine {
 	@Column({nullable: true})
 	ean: string
 
-	@CreateDateColumn()
+	@CreateDateColumn({name: 'created_at'})
 	createdAt: string
 }

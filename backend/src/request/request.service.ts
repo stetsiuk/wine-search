@@ -15,7 +15,7 @@ export class RequestService {
 		return await this.requestRepository.save(request);
 	}
 
-	public async checkHasRequestMadeForPeriod (requestName: string, hours: number) {
+	public async checkWasRequestMadeForPeriod (requestName: string, hours: number) {
 
 		const currentDate = new Date();
 
