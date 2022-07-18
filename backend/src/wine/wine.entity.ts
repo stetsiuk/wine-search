@@ -13,6 +13,7 @@ import { Partner } from '../partner/partner.entity';
 import { Category } from '../category/category.entity';
 import { Sort } from '../sort/sort.entity';
 import { Producer } from '../producer/producer.entity';
+import { Merchant } from '../merchant/merchant.entity';
 
 
 @Entity()
@@ -44,35 +45,38 @@ export class Wine {
 	quantity: number
 
 	@ManyToMany(() => Category, {eager: true, nullable: true})
-	@JoinTable()
+	@JoinTable({
+		name: 'wine_categories',
+		joinColumn: {name: 'wine_id', referencedColumnName: 'id'},
+		inverseJoinColumn: {name: 'category_id', referencedColumnName: 'id'}
+	})
 	categories: Category[]
 
 	@ManyToMany(() => Sort, {eager: true, nullable: true})
-	@JoinTable()
+	@JoinTable({
+		name: 'wine_sorts',
+		joinColumn: {name: 'wine_id', referencedColumnName: 'id'},
+		inverseJoinColumn: {name: 'sort_id', referencedColumnName: 'id'}}
+	)
 	sorts: Sort[]
 
-	@ManyToOne(() => Producer, (producer) => producer.name, {eager: true, nullable: true})
+	@ManyToOne(() => Producer, {eager: true, nullable: true})
 	@JoinColumn({name: 'producer'})
 	producer: Producer
 
-	@Column({name: 'partner_id', nullable: true})
-	partnerId: number
+	@ManyToOne(() => Merchant, {eager: true})
+	@JoinColumn({name: 'merchant'})
+	merchant: Merchant
 
 	@ManyToOne(() => Partner)
 	@JoinColumn({name: 'partner_id'})
 	partner: Partner
 
-	@Column({nullable: true})
+	@Column({name: 'affiliate_link', nullable: true})
 	affiliateLink: string
 
-	@Column({nullable: true})
+	@Column({name: 'image_url', nullable: true})
 	imageUrl: string
-
-	@Column({nullable: true})
-	merchantId: string
-
-	@Column({nullable: true})
-	merchantUrl: string
 
 	@Column({nullable: true})
 	land: string

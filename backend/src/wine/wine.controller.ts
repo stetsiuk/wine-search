@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post } from "@nestjs/common";
+import { Controller, Get, Query, Post, HttpCode } from "@nestjs/common";
 
 import { WineService } from "./wine.service";
 import { WineQueryDto } from "./dto/wine-query.dto";
@@ -7,13 +7,14 @@ import { WineQueryDto } from "./dto/wine-query.dto";
 export class WineController {
   constructor(private wineService: WineService) {}
 
-  @Post()
-  createWine() {
-    return this.wineService.createWine();
-  }
-
   @Get()
+  @HttpCode(200)
   collectWines(@Query() dto: WineQueryDto) {
     return this.wineService.collectWines(dto);
+  }
+
+  @Post('init-vinocentral')
+  initVinocentral() {
+    return this.wineService.initVinocentral();
   }
 }

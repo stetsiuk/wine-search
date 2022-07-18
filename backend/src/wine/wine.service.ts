@@ -3,68 +3,35 @@ import * as path from 'path';
 import { Injectable } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { Repository } from 'typeorm';
-import { RequestService } from '../request/request.service';
-import { CategoryService } from '../category/category.service';
-import { ProducerService } from '../producer/producer.service';
-import { SortService } from '../sort/sort.service';
+import { v4 as uuidv4 } from 'uuid';
+
 import { Wine } from './wine.entity';
 import { WineQueryDto } from './dto/wine-query.dto';
 import { IAggregateWines, IFetchedWines, IWine, IWineApiResponse } from './wine.interface';
-import { WEIN_CC_API_URL, WEIN_CC_PARTNER_ID, WEIN_CC_WINE_IMG_URL } from './wine.constants';
+import { WEIN_CC_API_URL, WEIN_CC_WINE_IMG_URL } from './wine.constants';
+import { SearchService } from '../search/search.service';
+import { CategoryService } from '../category/category.service';
+import { ProducerService } from '../producer/producer.service';
+import { PartnerService } from '../partner/partner.service';
+import { MerchantService } from '../merchant/merchant.service';
+import { SortService } from '../sort/sort.service';
 
 @Injectable()
 export class WineService {
   constructor(
       @InjectRepository(Wine) private wineRepository: Repository<Wine>,
       private readonly httpService: HttpService,
-      private readonly requestService: RequestService,
+      private readonly searchService: SearchService,
       private readonly categoryService: CategoryService,
       private readonly sortService: SortService,
-      private readonly producerService: ProducerService
+      private readonly producerService: ProducerService,
+      private readonly partnerService: PartnerService,
+      private readonly merchantService: MerchantService
   ) {}
 
   public async getWineByArticleNumber (articleNumber: string) {
-    return await this.wineRepository.findOne({ where: {articleNumber: articleNumber} });
-  }
-
-  public async createWine () {
-    const file = fs.readFileSync(path.resolve(__dirname, '..', '..', '..', 'vinocentral.json'));
-    // @ts-ignore
-    const info = JSON.parse(file);
-    for (let i = 0; i < info.length; i++) {
-      const obj = info[i];
-
-      const wineCategories = await this.categoryService.createAndGetCategoriesFromApi(obj.category);
-      const wineProducer = await this.producerService.createAndGetProducerFromApi(obj.producer);
-
-      const createdWine = this.wineRepository.create({
-        name: obj.name,
-        articleNumber: String(i),
-        vintage: obj.vintage,
-        price: obj.price,
-        alcohol: obj.price,
-        volume: obj.volume,
-        quantity: obj.quantity,
-        producer: wineProducer,
-        categories: wineCategories,
-        sorts: null,
-        affiliateLink: obj.affiliateLink,
-        imageUrl: obj.imageUrl,
-        merchantId: obj.merchantId,
-        merchantUrl: obj.merchantUrl,
-        land: obj.land,
-        region: obj.region,
-        ean: obj.ean,
-        partnerId: 2,
-      })
-
-      await this.wineRepository.save(createdWine)
-    }
-
-    console.log('good')
-
+    return await this.wineRepository.findOne( { where: { articleNumber: articleNumber } } );
   }
 
   public async selectWines (dto: WineQueryDto) {
@@ -73,15 +40,17 @@ export class WineService {
 
   public async collectWines (dto: WineQueryDto) {
     try {
-      const request = await this.requestService.create(dto.uniqueQuery);
+      const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, 2);
 
-      const wasRequestMade = await this.requestService.checkWasRequestMadeForPeriod(dto.uniqueQuery, 2);
+      const newSearch = await this.searchService.create(dto.uniqueQuery);
 
-      if (!wasRequestMade) {
+      if (!wasSearchMade) {
         await this.fetchWinesFromApi(dto);
       }
 
-      return await this.selectWines(dto);
+      // return await this.selectWines(dto);
+
+      return 'good'
 
     } catch (e) {
 
@@ -103,7 +72,6 @@ export class WineService {
         const wines = [...Object.values(data.result)];
 
         await this.createWinesFromApi(wines);
-
       }
 
     } catch (e) {
@@ -113,6 +81,9 @@ export class WineService {
 
   private async createWinesFromApi(wines: IWine[]) {
     try {
+
+      const winePartner = await this.partnerService.getPartnerById(1)
+
       for (let i = 0; i < wines.length; i++) {
         const wine = wines[i];
 
@@ -120,34 +91,35 @@ export class WineService {
 
         if (!isWineAvailable) {
 
+          const wineVintage = (wine.jahrgang === '' || wine.jahrgang === '0') ? null : Number(wine.jahrgang);
+          const wineAlcohol = (wine.alk === 0 || typeof wine.alk !== 'number') ? null : Number(wine.alk);
+
           const wineCategories = await this.categoryService.createAndGetCategoriesFromApi(wine.kategorie);
           const wineSorts = await this.sortService.createAndGetSortsFromApi(wine.rebsorte);
           const wineProducer = await this.producerService.createAndGetProducerFromApi(wine.produzent);
-          const wineVintage = (wine.jahrgang === '' || wine.jahrgang === '0') ? null : Number(wine.jahrgang);
+          const wineMerchant = await this.merchantService.createAndGetMerchant(wine.merchanturl);
 
           const createdWine = this.wineRepository.create({
             name: wine.produktname,
             articleNumber: wine.artikelnummer,
             vintage: wineVintage,
-            price: wine.preis,
-            alcohol: wine.alk,
-            volume: wine.liter,
+            price: wine.preis === 0 ? null : wine.preis,
+            alcohol: wineAlcohol,
+            volume: wine.liter === 0 ? null : wine.liter,
             quantity: Number(wine.quantity),
+            merchant: wineMerchant,
+            partner: winePartner,
             producer: wineProducer,
             categories: wineCategories,
             sorts: wineSorts,
             affiliateLink: null,
             imageUrl: WEIN_CC_WINE_IMG_URL(wine.id),
-            merchantId: wine.merchantid,
-            merchantUrl: wine.merchanturl,
-            land: wine.land,
-            region: wine.region,
-            ean: wine.ean,
-            partnerId: WEIN_CC_PARTNER_ID,
+            land: wine.land === '' ? null : wine.land,
+            region: wine.region === '' ? null : wine.region,
+            ean: wine.ean === '' ? null : wine.ean
           })
 
           await this.wineRepository.save(createdWine)
-
         }
       }
     } catch (e) {
@@ -155,6 +127,45 @@ export class WineService {
     }
   }
 
+  public async initVinocentral () {
+    const file = fs.readFileSync(path.resolve(__dirname, '..', '..', '..', 'vinocentral.json'));
+
+    const winePartner = await this.partnerService.getPartnerById(2)
+    // @ts-ignore
+    const info = JSON.parse(file);
+    for (let i = 0; i < info.length; i++) {
+      const obj = info[i];
+
+      const wineCategories = await this.categoryService.createAndGetCategoriesFromApi(obj.category);
+      const wineProducer = await this.producerService.createAndGetProducerFromApi(obj.producer);
+      const wineMerchant = await this.merchantService.createAndGetMerchant(obj.merchantUrl)
+
+      const createdWine = this.wineRepository.create({
+        articleNumber: uuidv4(),
+        name: obj.name,
+        vintage: obj.vintage,
+        price: obj.price,
+        alcohol: obj.price,
+        volume: obj.volume,
+        quantity: obj.quantity,
+        categories: wineCategories,
+        sorts: null,
+        producer: wineProducer,
+        merchant: wineMerchant,
+        partner: winePartner,
+        affiliateLink: obj.affiliateLink,
+        imageUrl: obj.imageUrl === '' ? null : obj.imageUrl,
+        land: obj.land,
+        region: obj.region,
+        ean: obj.ean
+      })
+
+      await this.wineRepository.save(createdWine)
+    }
+
+    return 'ok'
+
+  }
 
   // public async getWines(dto: WineQueryDto) {
   //   try {

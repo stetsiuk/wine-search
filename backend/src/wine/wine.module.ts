@@ -8,17 +8,21 @@ import { Wine } from './wine.entity';
 
 import { ProducerModule } from '../producer/producer.module';
 import { CategoryModule } from '../category/category.module';
-import { RequestModule } from '../request/request.module';
+import { SearchModule } from '../search/search.module';
 import { SortModule } from '../sort/sort.module';
+import { MerchantModule } from '../merchant/merchant.module';
+import { PartnerModule } from '../partner/partner.module';
 
 @Module({
   imports: [
       TypeOrmModule.forFeature([Wine]),
       HttpModule,
-      RequestModule,
+      SearchModule,
       CategoryModule,
       SortModule,
-      ProducerModule
+      ProducerModule,
+      PartnerModule,
+      MerchantModule
   ],
   controllers: [WineController],
   providers: [WineService]

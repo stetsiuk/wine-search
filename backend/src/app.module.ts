@@ -7,9 +7,10 @@ import { WineModule } from './wine/wine.module';
 import { ProducerModule } from './producer/producer.module';
 import { PartnerModule } from './partner/partner.module';
 import { VisitModule } from './visit/visit.module';
-import { RequestModule } from './request/request.module';
+import { SearchModule } from './search/search.module';
 import { CategoryModule } from './category/category.module';
 import { SortModule } from './sort/sort.module';
+import { MerchantModule } from './merchant/merchant.module';
 
 @Module({
     controllers: [],
@@ -25,9 +26,10 @@ import { SortModule } from './sort/sort.module';
         ProducerModule,
         PartnerModule,
         VisitModule,
-        RequestModule,
+        SearchModule,
         SortModule,
         CategoryModule,
-    ],
+        MerchantModule
+    ]
 })
 export class AppModule {}

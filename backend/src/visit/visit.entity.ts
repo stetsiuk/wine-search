@@ -1,7 +1,7 @@
 import { CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Wine } from '../wine/wine.entity';
-import { Request } from '../request/request.entity';
+import { Search } from '../search/search.entity';
 
 @Entity()
 export class Visit {
@@ -9,12 +9,12 @@ export class Visit {
 	id: number
 
 	@OneToOne(() => Wine)
-	@JoinColumn()
-	wine_id: Wine
+	@JoinColumn({name: 'wine_id'})
+	wineId: Wine
 
-	@OneToOne(() => Request)
-	@JoinColumn()
-	request_id: Request
+	@OneToOne(() => Search)
+	@JoinColumn({name: 'search_id'})
+	searchId: Search
 
 	@CreateDateColumn()
 	created: string

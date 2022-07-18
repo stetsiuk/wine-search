@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Partner } from './partner.entity';
 import { Repository } from 'typeorm';
+
+import { Partner } from './partner.entity';
 
 @Injectable()
 export class PartnerService {
@@ -9,8 +10,7 @@ export class PartnerService {
 		@InjectRepository(Partner) private partnerRepository: Repository<Partner>
 	) {}
 
-	async getPartner(id: number) {
-		const partner = await this.partnerRepository.findOne({where: {id: id}});
-
+	async getPartnerById(id: number) {
+		return await this.partnerRepository.findOne({where: {id: id}});
 	}
 }
