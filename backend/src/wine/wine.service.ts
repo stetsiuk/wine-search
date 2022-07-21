@@ -1,14 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Injectable } from "@nestjs/common";
-import { HttpService } from "@nestjs/axios";
+import { Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Wine } from './wine.entity';
 import { WineQueryDto } from './dto/wine-query.dto';
-import { IAggregateWines, IFetchedWines, IWine, IWineApiResponse } from './wine.interface';
+import { IWine, IWineApiResponse, IWineData } from './wine.interface';
+import { createDynamicTypeOrmWhereQueries } from './wine.utils';
 import { WEIN_CC_API_URL, WEIN_CC_WINE_IMG_URL } from './wine.constants';
 import { SearchService } from '../search/search.service';
 import { CategoryService } from '../category/category.service';
@@ -34,13 +35,9 @@ export class WineService {
     return await this.wineRepository.findOne( { where: { articleNumber: articleNumber } } );
   }
 
-  public async selectWines (dto: WineQueryDto) {
-
-  }
-
   public async collectWines (dto: WineQueryDto) {
     try {
-      const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, 2);
+      const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, 24);
 
       const newSearch = await this.searchService.create(dto.uniqueQuery);
 
@@ -48,20 +45,18 @@ export class WineService {
         await this.fetchWinesFromApi(dto);
       }
 
-      // return await this.selectWines(dto);
-
-      return 'good'
+      return await this.selectWines(dto);
 
     } catch (e) {
-
+      console.log(e)
     }
   }
 
   private async fetchWinesFromApi (dto: WineQueryDto) {
     try {
-      const {uniqueQuery, country, orderBy, numberOfItems} = dto;
+      const {uniqueQuery, country} = dto;
 
-      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/${orderBy}/${numberOfItems}`, {
+      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/100`, {
         auth: {
           username: String(process.env.API_WEIN_USERNAME),
           password: String(process.env.API_WEIN_PASSWORD)
@@ -127,7 +122,113 @@ export class WineService {
     }
   }
 
-  public async initVinocentral () {
+  private async selectWines (dto: WineQueryDto) {
+    try {
+      const {queries} = dto;
+
+      let selectedWines: Array<Wine[]> = [];
+
+      for (let i = 0; i < queries.length; i++) {
+
+        const searchWine = await this.wineRepository.find({where: createDynamicTypeOrmWhereQueries(queries[i])});
+
+        selectedWines.push(searchWine);
+      }
+
+      const aggregatedWines = await this.aggregateWines(selectedWines);
+
+      return this.sortWines(aggregatedWines);
+
+    } catch (e) {
+
+    }
+  }
+
+  private async aggregateWines (wines: Wine[][]) {
+    try {
+
+      let foundMerchants: string[][] = [];
+
+      for (let i = 0; i < wines.length; i++) {
+        let sectionMerchants = [];
+
+        for (let j = 0; j < wines[i].length; j++) {
+          const merchant = wines[i][j].merchant.name;
+
+          if (!sectionMerchants.includes(merchant)) {
+            sectionMerchants.push(merchant)
+          }
+
+        }
+        foundMerchants.push(sectionMerchants);
+      }
+
+      const data: IWineData = {
+        multipleMatch: [],
+        singleMatch: []
+      };
+
+      for (let i = 0; i < wines.length; i++) {
+        for (let j = 0; j < wines[i].length; j++) {
+
+          const wine = wines[i][j];
+          const wineMerchant = wine.merchant.name;
+          const isMerchantAffiliated = Boolean(wine.partner.id !== 1)
+          const isMultipleMerchant = this.checkIsMultipleMerchant(wineMerchant, foundMerchants);
+          const path = isMultipleMerchant ? 'multipleMatch' : 'singleMatch';
+
+          const event = (item) => item.name === wineMerchant
+          if (!data[path].some(event)) {
+            data[path].push({
+              name: wineMerchant,
+              isAffiliated: isMerchantAffiliated,
+              amountWines: 0,
+              wines: []
+            })
+          }
+
+          data[path].forEach((item, index) => {
+            if (item.name === wineMerchant) {
+              data[path][index].amountWines += 1
+              // @ts-ignore
+              data[path][index].wines.push(wine);
+            }
+          })
+        }
+      }
+
+      return data;
+
+    } catch (e) {
+
+    }
+  }
+
+  private sortWines (wines: IWineData) {
+
+    for (let key of Object.keys(wines)) {
+      wines[key].sort((a, b) => b.amountWines - a.amountWines)
+    }
+
+    for (let key of Object.keys(wines)) {
+      wines[key].sort((a, b) => Number(b.isAffiliated) - Number(a.isAffiliated))
+    }
+
+    return wines
+  }
+
+  private checkIsMultipleMerchant (merchant, listMerchants) {
+    let flag = true;
+
+    listMerchants.forEach((item) => {
+      if (!item.includes(merchant)) {
+        flag = false;
+      }
+    })
+    return flag
+  }
+
+  public async initVinocentralDB () {
     const file = fs.readFileSync(path.resolve(__dirname, '..', '..', '..', 'vinocentral.json'));
 
     const winePartner = await this.partnerService.getPartnerById(2)
@@ -162,127 +263,6 @@ export class WineService {
 
       await this.wineRepository.save(createdWine)
     }
-
     return 'ok'
-
   }
-
-  // public async getWines(dto: WineQueryDto) {
-  //   try {
-  //     const {queryItems, country, orderBy, numberOfItems} = dto;
-  //
-  //     let fetchedWines: {[key: string]: IWine[]} = {};
-  //
-  //     for (let i = 0; i < queryItems.length; i++) {
-  //       const query = encodeURIComponent(queryItems[i]);
-  //
-  //       const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`https://api.wein.cc/v1.0/search/serp/${query}/${country}/${orderBy}/${numberOfItems}`, {
-  //         auth: {
-  //           username: String(process.env.API_WEIN_USERNAME),
-  //           password: String(process.env.API_WEIN_PASSWORD)
-  //         }
-  //       })
-  //
-  //       if (data.status === 'ok') {
-  //         fetchedWines[queryItems[i]] = [...Object.values(data.result)];
-  //       } else {
-  //         return {status: 'error'};
-  //       }
-  //
-  //       await this.delayUntilNextRequest(1000);
-  //     }
-  //
-  //     return this.aggregateWines(fetchedWines);
-  //
-  //   } catch (e) {
-  //     throw new HttpException(e.message, HttpStatus.BAD_GATEWAY);
-  //   }
-  // };
-  //
-  // private async aggregateWines(fetchedWines: IFetchedWines) {
-  //   const listMerchantId = this.getListMerchantId(fetchedWines);
-  //
-  //   let aggregatedWines: IAggregateWines = {
-  //     status: '',
-  //     queryCounts: {},
-  //     shopCounts: 0,
-  //     shopResults: {}
-  //   };
-  //
-  //   Object.entries(fetchedWines).forEach(([key, value]) => {
-  //
-  //     aggregatedWines.queryCounts[key] = 0;
-  //
-  //     Object.values(value).forEach(item => {
-  //
-  //       if (!aggregatedWines.shopResults.hasOwnProperty(item.merchanturl)) {
-  //         aggregatedWines.shopResults[item.merchanturl] = {
-  //           foundedItems: 0,
-  //           items: []
-  //         }
-  //       }
-  //
-  //       if (this.checkItemAvailableToAllMerchants(item.merchantid, listMerchantId)) {
-  //         aggregatedWines.queryCounts[key] += 1;
-  //
-  //         aggregatedWines.shopResults[item.merchanturl] = {
-  //           foundedItems: aggregatedWines.shopResults[item.merchanturl].foundedItems + 1,
-  //           items: [...aggregatedWines.shopResults[item.merchanturl].items, item]
-  //         }
-  //
-  //       }
-  //     })
-  //   });
-  //
-  //   Object.entries(aggregatedWines.shopResults).forEach(([key, value]) => {
-  //     if (value.foundedItems === 0 ) {
-  //       delete aggregatedWines.shopResults[key]
-  //     }
-  //   })
-  //
-  //   const shopCounts = Object.entries(aggregatedWines.shopResults).length;
-  //
-  //   aggregatedWines.shopCounts = shopCounts;
-  //
-  //   if (shopCounts === 0) {
-  //     aggregatedWines.status = 'empty';
-  //   } else {
-  //     aggregatedWines.status = 'ok';
-  //   }
-  //
-  //   return {...aggregatedWines};
-  // };
-  //
-  // private getListMerchantId(fetchedWines: IFetchedWines) {
-  //   let listMerchantId: {[key: string]: [string]} | {} = {};
-  //
-  //   for (let [key, value] of Object.entries(fetchedWines)) {
-  //     let merchantIds = [];
-  //
-  //     for (let item of value) {
-  //       merchantIds.push(item.merchantid);
-  //     }
-  //
-  //     listMerchantId[key] = merchantIds;
-  //   }
-  //
-  //   return listMerchantId;
-  // };
-  //
-  // private checkItemAvailableToAllMerchants(id: string, listMerchantId: {[key: string]: [string]}) {
-  //   let flag = true;
-  //
-  //   for (let value of Object.values(listMerchantId)) {
-  //     if (!value.includes(id)) {
-  //       flag = false;
-  //       break;
-  //     }
-  //   }
-  //
-  //   return flag;
-  // };
-  //
-  // private delayUntilNextRequest(ms: number) {
-  //   return new Promise(resolve => setTimeout(resolve, ms));
-  // };
 }

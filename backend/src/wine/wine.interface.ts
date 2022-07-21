@@ -1,3 +1,17 @@
+import { Wine } from './wine.entity';
+
+export interface IWineMatch {
+	name: string;
+	isAffiliated: boolean;
+	amountWines: number;
+	wines: [Wine] | []
+
+}
+
+export interface IWineData {
+	multipleMatch: IWineMatch[]
+	singleMatch: IWineMatch[]
+}
 
 export interface IWine {
 	pos: number;

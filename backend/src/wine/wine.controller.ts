@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, HttpCode } from "@nestjs/common";
+import { Controller, Get, Query, Post, HttpCode, ValidationPipe, UsePipes } from '@nestjs/common';
 
 import { WineService } from "./wine.service";
 import { WineQueryDto } from "./dto/wine-query.dto";
@@ -9,12 +9,13 @@ export class WineController {
 
   @Get()
   @HttpCode(200)
+  // @UsePipes(new ValidationPipe())
   collectWines(@Query() dto: WineQueryDto) {
     return this.wineService.collectWines(dto);
   }
 
   @Post('init-vinocentral')
   initVinocentral() {
-    return this.wineService.initVinocentral();
+    return this.wineService.initVinocentralDB();
   }
 }

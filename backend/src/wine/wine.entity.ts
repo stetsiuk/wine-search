@@ -61,14 +61,14 @@ export class Wine {
 	sorts: Sort[]
 
 	@ManyToOne(() => Producer, {eager: true, nullable: true})
-	@JoinColumn({name: 'producer'})
+	@JoinColumn({name: 'producer_id'})
 	producer: Producer
 
 	@ManyToOne(() => Merchant, {eager: true})
-	@JoinColumn({name: 'merchant'})
+	@JoinColumn({name: 'merchant_id'})
 	merchant: Merchant
 
-	@ManyToOne(() => Partner)
+	@ManyToOne(() => Partner, {eager: true})
 	@JoinColumn({name: 'partner_id'})
 	partner: Partner
 

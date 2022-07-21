@@ -1,9 +1,20 @@
 import { IsArray, IsNotEmpty, IsString } from "class-validator";
 
+export class Query {
+  @IsString()
+  name?: string
+
+  @IsString()
+  producer?: string
+
+  @IsString()
+  year?: string
+}
+
 export class WineQueryDto {
   @IsArray()
-  @IsString({each: true})
-  queries: string[];
+  @IsNotEmpty()
+  queries: Query[];
 
   @IsString()
   @IsNotEmpty()
