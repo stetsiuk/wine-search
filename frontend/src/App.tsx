@@ -1,10 +1,14 @@
 import React from 'react';
+import { Provider } from 'react-redux';
+
+import { store } from './store/store';
+import AppRouter from './router/router';
 
 function App() {
 	return (
-		<div>
-			<input list="europe-countries" placeholder="Start typing..." type="text" multiple/>
-		</div>
+		<Provider store={store}>
+			<AppRouter/>
+		</Provider>
 	);
 }
 
