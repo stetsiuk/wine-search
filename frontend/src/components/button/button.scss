@@ -1,0 +1,17 @@
+.button {
+	border-radius: 5px;
+	background-color: black;
+	color: white;
+	border: none;
+	box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+
+	&__medium {
+		height: 36px;
+		width: 200px;
+	}
+	&:hover {
+		cursor: pointer;
+		transform: scale(1.02);
+		filter: brightness(1.1);
+	}
+}
