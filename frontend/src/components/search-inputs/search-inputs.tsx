@@ -1,14 +1,29 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 
 import RowInputs from './row-inputs/row-inputs';
-import './search-input.scss';
 import Button from '../button/button';
+import './search-input.scss';
 
 const SearchInputs: FC = () => {
+
 	const [vintage, setVintage] = useState(false);
 
-	const handleSearchWine = () => {
+	useEffect(() => {
+		const vintageSettingsFromLocalStorage = localStorage.getItem('vintage')
 
+		if (vintageSettingsFromLocalStorage && typeof JSON.parse(vintageSettingsFromLocalStorage) !== 'boolean') {
+			localStorage.removeItem('vintage')
+		}
+
+		if (vintageSettingsFromLocalStorage) {
+			setVintage(JSON.parse(vintageSettingsFromLocalStorage))
+		}
+	}, [])
+
+	const handleChangeVintage = () => {
+		const newVintageSettings = !vintage;
+		setVintage(newVintageSettings)
+		localStorage.setItem('vintage', JSON.stringify(newVintageSettings))
 	}
 
 	return (
@@ -16,9 +31,13 @@ const SearchInputs: FC = () => {
 			<div className='search__controls'>
 				<div className='search__vintage'>
 					<span>Search vintage wines</span>
-					<input type="checkbox" checked={vintage} onChange={() => setVintage(prevState => !prevState)}/>
+					<input
+						type="checkbox"
+						checked={vintage}
+						onChange={handleChangeVintage}
+					/>
 				</div>
-				<Button type='medium' text='Search' onClick={() => handleSearchWine()}/>
+				<Button type='medium' text='Search'/>
 			</div>
 			<RowInputs vintage={vintage}/>
 		</div>

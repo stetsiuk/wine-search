@@ -1,7 +1,8 @@
 import React, { FC, PropsWithChildren, useState } from 'react';
 
-import './row-inputs.scss';
 import InputProducerAutocomplete from '../../input/input-producer/inputProducerAutocomplete';
+import './row-inputs.scss';
+
 
 interface IRowInputsProps {
 	vintage: boolean
@@ -19,7 +20,7 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 
 	const [searchWines, setSearchWines] = useState<SearchWines[]>([{name: '', producer: '', vintage: null, visibleAddButton: true}])
 
-	const handleChangeInputValue = (index: number, field: 'name' | 'producer' | 'vintage', value: string) => {
+	const handleChangeInputValue = (index: number, field: 'name' | 'producer' | 'vintage', value: string | null) => {
 		setSearchWines(prevState => prevState.map((item, inx) => {
 			if (index === inx) {
 				return {
@@ -42,6 +43,15 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 		}
 	}
 
+	const handleChangeVintageInput = (index: number, value: string) => {
+		if (value === '') {
+			handleChangeInputValue(index, 'vintage', null)
+		}
+		if (Number(value) && value.length <= 4) {
+			handleChangeInputValue(index, 'vintage', value)
+		}
+	}
+
 	const handleDeleteSearchInput = (index: number) => {
 		setSearchWines(prevState => prevState.filter((i, idx) => index !== idx))
 	}
@@ -56,16 +66,11 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 						value={searchWines[index].name}
 						onChange={(e) => handleChangeInputValue(index, 'name', e.target.value)}
 					/>
-					{/*<input*/}
-					{/*	type='text'*/}
-					{/*	placeholder='Producer'*/}
-					{/*	value={searchWines[index].producer}*/}
-					{/*	onChange={(e) => handleChangeInputValue(index, 'producer', e.target.value)}*/}
-					{/*/>*/}
 
 					<InputProducerAutocomplete
 						value={searchWines[index].producer}
-						onChange={(e) => handleChangeInputValue(index, 'producer', e.target.value)}
+						index={index}
+						handleChangeInputValue={handleChangeInputValue}
 					/>
 
 					{vintage && (
@@ -73,8 +78,9 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 							className='vintage'
 							type="text"
 							placeholder='Year'
+							pattern='^\d{4}$'
 							value={searchWines[index].vintage === null ? '' : Number(searchWines[index].vintage)}
-							onChange={(e) => handleChangeInputValue(index, 'vintage', e.target.value)}
+							onChange={(e) => handleChangeVintageInput(index, e.target.value)}
 						/>
 					)}
 
