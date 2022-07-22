@@ -1,21 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 
 import { Producer } from './producer.entity';
-
 
 
 @Injectable()
 export class ProducerService {
 	constructor(
-		@InjectRepository(Producer) private producerService: Repository<Producer>
+		@InjectRepository(Producer) private producerRepository: Repository<Producer>
 	) {}
+
+	public async getLikeProducersByName(producerName: string, limit: number) {
+		try {
+			const result = await this.producerRepository.createQueryBuilder('producer')
+				.select('producer.*')
+				.addSelect('LENGTH(producer.name)', 'lt')
+				.where('producer.name ILIKE :name', {name: `%${producerName}%`})
+				.orderBy('lt', 'ASC')
+				.limit(limit)
+				.getRawMany()
+
+			return result.map(item => item.name)
+
+		} catch (e) {
+			throw new InternalServerErrorException(e.message)
+		}
+	}
 
 	public async getProducer(producerName: string): Promise<Producer> {
 		try {
 
-			return await this.producerService.findOne({where: {name: producerName}});
+			return await this.producerRepository.findOne({where: {name: producerName}});
 
 		} catch (e) {
 
@@ -27,8 +43,8 @@ export class ProducerService {
 			const producer = await this.getProducer(producerName);
 
 			if (!producer) {
-				const createdProducer = await this.producerService.create({name: producerName});
-				return await this.producerService.save(createdProducer);
+				const createdProducer = await this.producerRepository.create({name: producerName});
+				return await this.producerRepository.save(createdProducer);
 			}
 
 			return producer;
