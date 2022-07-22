@@ -3,7 +3,8 @@ import * as path from 'path';
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
+import { LessThan, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Wine } from './wine.entity';
@@ -215,6 +216,20 @@ export class WineService {
     }
 
     return wines
+  }
+
+  @Cron('0 0 0 * * *')
+  public async deleteExpiredWines() {
+    const candidatesForDeletion = await this.wineRepository.find({
+      where: {
+        partner: {
+          id: 1
+        },
+        createdAt: LessThan(new Date().toLocaleString())
+
+      }
+    })
+    await this.wineRepository.delete(candidatesForDeletion.map(item => item.id))
   }
 
   private checkIsMultipleMerchant (merchant, listMerchants) {

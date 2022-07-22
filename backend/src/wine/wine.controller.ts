@@ -14,6 +14,11 @@ export class WineController {
     return this.wineService.collectWines(dto);
   }
 
+  @Get('check')
+  check() {
+    return this.wineService.deleteExpiredWines();
+  }
+
   @Post('init-vinocentral')
   initVinocentral() {
     return this.wineService.initVinocentralDB();

@@ -11,11 +11,13 @@ import { SearchModule } from './search/search.module';
 import { CategoryModule } from './category/category.module';
 import { SortModule } from './sort/sort.module';
 import { MerchantModule } from './merchant/merchant.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
     controllers: [],
     providers: [],
     imports: [
+        ScheduleModule.forRoot(),
         ConfigModule.forRoot({
           envFilePath: `.env`,
         }),
