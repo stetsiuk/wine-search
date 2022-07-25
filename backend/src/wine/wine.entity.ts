@@ -14,6 +14,7 @@ import { Category } from '../category/category.entity';
 import { Sort } from '../sort/sort.entity';
 import { Producer } from '../producer/producer.entity';
 import { Merchant } from '../merchant/merchant.entity';
+import { WineCountries } from './wine.interface';
 
 
 @Entity()
@@ -22,7 +23,7 @@ export class Wine {
 	id: number
 
 	@Index()
-	@Column({name: 'article_number', unique: true})
+	@Column({name: 'article_number'})
 	articleNumber: string
 
 	@Index()
@@ -72,8 +73,8 @@ export class Wine {
 	@JoinColumn({name: 'partner_id'})
 	partner: Partner
 
-	@Column({name: 'affiliate_link', nullable: true})
-	affiliateLink: string
+	@Column({name: 'link', nullable: true})
+	link: string
 
 	@Column({name: 'image_url', nullable: true})
 	imageUrl: string
@@ -83,6 +84,9 @@ export class Wine {
 
 	@Column({nullable: true})
 	region: string
+
+	@Column({length: 2})
+	country: WineCountries
 
 	@Column({nullable: true})
 	ean: string

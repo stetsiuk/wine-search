@@ -1,4 +1,6 @@
-import { IsArray, IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+
+import { WineCountries } from '../wine.interface';
 
 export class Query {
   @IsString()
@@ -20,15 +22,9 @@ export class WineQueryDto {
   @IsNotEmpty()
   uniqueQuery: string
 
-  @IsString()
-  @IsNotEmpty()
-  country: 'de' | 'at' | 'ch' | 'us';
-
-  @IsString()
-  @IsNotEmpty()
-  orderBy: 'standard' | 'priceasc';
-
-  @IsString()
-  @IsNotEmpty()
-  numberOfItems: '10' | '20' | '50' | '100'
+  @IsEnum(
+      WineCountries,
+      {message: `The following countries are currently available for search: ${Object.values(WineCountries)}`}
+  )
+  country: WineCountries
 }

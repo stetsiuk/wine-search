@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
@@ -9,9 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Wine } from './wine.entity';
 import { WineQueryDto } from './dto/wine-query.dto';
-import { IWine, IWineApiResponse, IWineData } from './wine.interface';
 import { createDynamicTypeOrmWhereQueries } from './wine.utils';
-import { WEIN_CC_API_URL, WEIN_CC_WINE_IMG_URL } from './wine.constants';
+import { WEIN_CC_API_URL, WEIN_CC_WINE_IMG_URL, WEIN_CC_WINE_URL } from './wine.constants';
+import { IWine, IWineApiResponse, IWineData, WineCountries } from './wine.interface';
 import { SearchService } from '../search/search.service';
 import { CategoryService } from '../category/category.service';
 import { ProducerService } from '../producer/producer.service';
@@ -32,25 +32,21 @@ export class WineService {
       private readonly merchantService: MerchantService
   ) {}
 
-  public async getWineByArticleNumber (articleNumber: string) {
-    return await this.wineRepository.findOne( { where: { articleNumber: articleNumber } } );
+  public async getWineByArticleNumberAndCountry (articleNumber: string, country: WineCountries) {
+    return await this.wineRepository.findOne( { where: { articleNumber: articleNumber, country: country } } );
   }
 
   public async collectWines (dto: WineQueryDto) {
-    try {
-      const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, 24);
 
-      const newSearch = await this.searchService.create(dto.uniqueQuery);
+    const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, dto.country, 24);
 
-      if (!wasSearchMade) {
-        await this.fetchWinesFromApi(dto);
-      }
-
-      return await this.selectWines(dto);
-
-    } catch (e) {
-      console.log(e)
+    if (!wasSearchMade) {
+      await this.fetchWinesFromApi(dto);
     }
+
+    await this.searchService.create(dto.uniqueQuery, dto.country);
+
+    return await this.selectWines(dto);
   }
 
   private async fetchWinesFromApi (dto: WineQueryDto) {
@@ -67,142 +63,133 @@ export class WineService {
       if (data.status === 'ok') {
         const wines = [...Object.values(data.result)];
 
-        await this.createWinesFromApi(wines);
+        return await this.createWinesFromApi(wines, country);
+      } else if (data.status === 'error') {
+        throw new Error(`Error ${data.result}`);
       }
-
+      throw new Error(String(data));
     } catch (e) {
-
+      throw new BadGatewayException(e.message);
     }
   }
 
-  private async createWinesFromApi(wines: IWine[]) {
-    try {
+  private async createWinesFromApi(wines: IWine[], country: WineCountries) {
 
-      const winePartner = await this.partnerService.getPartnerById(1)
+    const winePartner = await this.partnerService.getPartnerById(1)
 
-      for (let i = 0; i < wines.length; i++) {
-        const wine = wines[i];
+    for (let i = 0; i < wines.length; i++) {
+      const wine = wines[i];
 
-        const isWineAvailable = await this.getWineByArticleNumber(wine.artikelnummer);
+      const isWineAvailable = await this.getWineByArticleNumberAndCountry(wine.artikelnummer, country);
 
-        if (!isWineAvailable) {
+      if (!isWineAvailable) {
 
-          const wineVintage = (wine.jahrgang === '' || wine.jahrgang === '0') ? null : Number(wine.jahrgang);
-          const wineAlcohol = (wine.alk === 0 || typeof wine.alk !== 'number') ? null : Number(wine.alk);
+        const wineVintage = (wine.jahrgang === '' || wine.jahrgang === '0') ? null : Number(wine.jahrgang);
+        const wineAlcohol = (wine.alk === 0 || typeof wine.alk !== 'number') ? null : Number(wine.alk);
 
-          const wineCategories = await this.categoryService.createAndGetCategoriesFromApi(wine.kategorie);
-          const wineSorts = await this.sortService.createAndGetSortsFromApi(wine.rebsorte);
-          const wineProducer = await this.producerService.createAndGetProducerFromApi(wine.produzent);
-          const wineMerchant = await this.merchantService.createAndGetMerchant(wine.merchanturl);
+        const wineCategories = await this.categoryService.createAndGetCategoriesFromApi(wine.kategorie);
+        const wineSorts = await this.sortService.createAndGetSortsFromApi(wine.rebsorte);
+        const wineProducer = await this.producerService.createAndGetProducerFromApi(wine.produzent);
+        const wineMerchant = await this.merchantService.createAndGetMerchant(wine.merchanturl);
 
-          const createdWine = this.wineRepository.create({
-            name: wine.produktname,
-            articleNumber: wine.artikelnummer,
-            vintage: wineVintage,
-            price: wine.preis === 0 ? null : wine.preis,
-            alcohol: wineAlcohol,
-            volume: wine.liter === 0 ? null : wine.liter,
-            quantity: Number(wine.quantity),
-            merchant: wineMerchant,
-            partner: winePartner,
-            producer: wineProducer,
-            categories: wineCategories,
-            sorts: wineSorts,
-            affiliateLink: null,
-            imageUrl: WEIN_CC_WINE_IMG_URL(wine.id),
-            land: wine.land === '' ? null : wine.land,
-            region: wine.region === '' ? null : wine.region,
-            ean: wine.ean === '' ? null : wine.ean
-          })
+        const createdWine = this.wineRepository.create({
+          name: wine.produktname,
+          articleNumber: wine.artikelnummer,
+          vintage: wineVintage,
+          alcohol: wineAlcohol,
+          price: wine.preis === 0 ? null : wine.preis,
+          volume: wine.liter === 0 ? null : wine.liter,
+          quantity: Number(wine.quantity),
+          merchant: wineMerchant,
+          partner: winePartner,
+          producer: wineProducer,
+          categories: wineCategories,
+          sorts: wineSorts,
+          link: WEIN_CC_WINE_URL(country, wine.id, wine.merchantid),
+          imageUrl: WEIN_CC_WINE_IMG_URL(wine.id),
+          land: wine.land === '' ? null : wine.land,
+          region: wine.region === '' ? null : wine.region,
+          country: country,
+          ean: wine.ean === '' ? null : wine.ean
+        })
 
-          await this.wineRepository.save(createdWine)
-        }
+        await this.wineRepository.save(createdWine)
       }
-    } catch (e) {
-
     }
   }
 
   private async selectWines (dto: WineQueryDto) {
-    try {
-      const {queries} = dto;
+    const {queries, country} = dto;
 
-      let selectedWines: Array<Wine[]> = [];
+    let selectedWines: Array<Wine[]> = [];
 
-      for (let i = 0; i < queries.length; i++) {
+    for (let i = 0; i < queries.length; i++) {
 
-        const searchWine = await this.wineRepository.find({where: createDynamicTypeOrmWhereQueries(queries[i])});
+      const searchWine = await this.wineRepository.find({
+        where: createDynamicTypeOrmWhereQueries(queries[i], country)
+      });
 
-        selectedWines.push(searchWine);
-      }
-
-      const aggregatedWines = await this.aggregateWines(selectedWines);
-
-      return this.sortWines(aggregatedWines);
-
-    } catch (e) {
-
+      selectedWines.push(searchWine);
     }
+
+    const aggregatedWines = await this.aggregateWines(selectedWines);
+
+    return this.sortWines(aggregatedWines);
   }
 
   private async aggregateWines (wines: Wine[][]) {
-    try {
 
-      let foundMerchants: string[][] = [];
+    let foundMerchants: string[][] = [];
 
-      for (let i = 0; i < wines.length; i++) {
-        let sectionMerchants = [];
+    for (let i = 0; i < wines.length; i++) {
+      let sectionMerchants = [];
 
-        for (let j = 0; j < wines[i].length; j++) {
-          const merchant = wines[i][j].merchant.name;
+      for (let j = 0; j < wines[i].length; j++) {
+        const merchant = wines[i][j].merchant.name;
 
-          if (!sectionMerchants.includes(merchant)) {
-            sectionMerchants.push(merchant)
-          }
-
+        if (!sectionMerchants.includes(merchant)) {
+          sectionMerchants.push(merchant)
         }
-        foundMerchants.push(sectionMerchants);
+
       }
+      foundMerchants.push(sectionMerchants);
+    }
 
-      const data: IWineData = {
-        multipleMatch: [],
-        singleMatch: []
-      };
+    const data: IWineData = {
+      multipleMatch: [],
+      singleMatch: []
+    };
 
-      for (let i = 0; i < wines.length; i++) {
-        for (let j = 0; j < wines[i].length; j++) {
+    for (let i = 0; i < wines.length; i++) {
+      for (let j = 0; j < wines[i].length; j++) {
 
-          const wine = wines[i][j];
-          const wineMerchant = wine.merchant.name;
-          const isMerchantAffiliated = Boolean(wine.partner.id !== 1)
-          const isMultipleMerchant = this.checkIsMultipleMerchant(wineMerchant, foundMerchants);
-          const path = isMultipleMerchant ? 'multipleMatch' : 'singleMatch';
+        const wine = wines[i][j];
+        const wineMerchant = wine.merchant.name;
+        const isMerchantAffiliated = Boolean(wine.partner.id !== 1)
+        const isMultipleMerchant = this.checkIsMultipleMerchant(wineMerchant, foundMerchants);
+        const path = isMultipleMerchant ? 'multipleMatch' : 'singleMatch';
 
-          const event = (item) => item.name === wineMerchant
-          if (!data[path].some(event)) {
-            data[path].push({
-              name: wineMerchant,
-              isAffiliated: isMerchantAffiliated,
-              amountWines: 0,
-              wines: []
-            })
-          }
-
-          data[path].forEach((item, index) => {
-            if (item.name === wineMerchant) {
-              data[path][index].amountWines += 1
-              // @ts-ignore
-              data[path][index].wines.push(wine);
-            }
+        const event = (item) => item.name === wineMerchant
+        if (!data[path].some(event)) {
+          data[path].push({
+            name: wineMerchant,
+            isAffiliated: isMerchantAffiliated,
+            amountWines: 0,
+            wines: []
           })
         }
+
+        data[path].forEach((item, index) => {
+          if (item.name === wineMerchant) {
+            data[path][index].amountWines += 1
+            // @ts-ignore
+            data[path][index].wines.push(wine);
+          }
+        })
       }
-
-      return data;
-
-    } catch (e) {
-
     }
+
+    return data;
   }
 
   private sortWines (wines: IWineData) {
@@ -218,8 +205,19 @@ export class WineService {
     return wines
   }
 
+  private checkIsMultipleMerchant (merchant, listMerchants) {
+    let flag = true;
+
+    listMerchants.forEach((item) => {
+      if (!item.includes(merchant)) {
+        flag = false;
+      }
+    })
+    return flag
+  }
+
   @Cron('0 0 0 * * *')
-  public async deleteExpiredWines() {
+  private async deleteExpiredWines() {
     const candidatesForDeletion = await this.wineRepository.find({
       where: {
         partner: {
@@ -230,17 +228,6 @@ export class WineService {
       }
     })
     await this.wineRepository.delete(candidatesForDeletion.map(item => item.id))
-  }
-
-  private checkIsMultipleMerchant (merchant, listMerchants) {
-    let flag = true;
-
-    listMerchants.forEach((item) => {
-      if (!item.includes(merchant)) {
-        flag = false;
-      }
-    })
-    return flag
   }
 
   public async initVinocentralDB () {
@@ -264,15 +251,16 @@ export class WineService {
         alcohol: obj.price,
         volume: obj.volume,
         quantity: obj.quantity,
-        categories: wineCategories,
         sorts: null,
+        categories: wineCategories,
         producer: wineProducer,
         merchant: wineMerchant,
         partner: winePartner,
-        affiliateLink: obj.affiliateLink,
+        link: obj.affiliateLink,
         imageUrl: obj.imageUrl === '' ? null : obj.imageUrl,
         land: obj.land,
         region: obj.region,
+        country: WineCountries.De,
         ean: obj.ean
       })
 

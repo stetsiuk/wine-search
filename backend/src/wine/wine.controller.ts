@@ -9,14 +9,9 @@ export class WineController {
 
   @Get()
   @HttpCode(200)
-  // @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe())
   collectWines(@Query() dto: WineQueryDto) {
     return this.wineService.collectWines(dto);
-  }
-
-  @Get('check')
-  check() {
-    return this.wineService.deleteExpiredWines();
   }
 
   @Post('init-vinocentral')

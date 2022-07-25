@@ -5,7 +5,6 @@ export interface IWineMatch {
 	isAffiliated: boolean;
 	amountWines: number;
 	wines: [Wine] | []
-
 }
 
 export interface IWineData {
@@ -43,20 +42,10 @@ export interface IWineApiResponse {
 	remaining: number;
 }
 
-export interface IFetchedWines {
-	[key: string]: IWine[]
-}
-
-export interface IAggregateWines {
-	status: string;
-	shopCounts: number;
-	queryCounts: {
-		[key: string]: number
-	};
-	shopResults: {
-		[key: string]: {
-			foundedItems: number;
-			items: IWine[]
-		}
-	};
+export enum WineCountries {
+	De = 'de',
+	At = 'at',
+	Ch = 'ch',
+	Us = 'us',
+	Gb = 'gb'
 }
