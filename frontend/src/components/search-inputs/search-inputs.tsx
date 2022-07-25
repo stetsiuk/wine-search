@@ -29,6 +29,13 @@ const SearchInputs: FC = () => {
 	return (
 		<div className='search'>
 			<div className='search__controls'>
+				<select className='search__country'>
+					<option value="de" selected>Germany</option>
+					<option value="at">Austria</option>
+					<option value="ch">Switzerland</option>
+					<option value="us">USA</option>
+					<option value="gb">Great Britain</option>
+				</select>
 				<div className='search__vintage'>
 					<span>Search vintage wines</span>
 					<input
