@@ -53,7 +53,7 @@ export class WineService {
     try {
       const {uniqueQuery, country} = dto;
 
-      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/100`, {
+      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/150`, {
         auth: {
           username: String(process.env.API_WEIN_USERNAME),
           password: String(process.env.API_WEIN_PASSWORD)
@@ -64,12 +64,13 @@ export class WineService {
         const wines = [...Object.values(data.result)];
 
         return await this.createWinesFromApi(wines, country);
+
       } else if (data.status === 'error') {
-        throw new Error(`Error ${data.result}`);
+        return new BadGatewayException(`Error ${data.result}`);
       }
-      throw new Error(String(data));
+      return new BadGatewayException(String(data));
     } catch (e) {
-      throw new BadGatewayException(e.message);
+     return new BadGatewayException(e.message);
     }
   }
 
