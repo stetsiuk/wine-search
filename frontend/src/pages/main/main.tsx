@@ -3,7 +3,7 @@ import { FC } from 'react';
 import SearchInputs from '../../components/search-inputs/search-inputs';
 import './main.scss';
 
-const Main: FC = () => {
+const MainPage: FC = () => {
 
 	return (
 		<div className='main'>
@@ -13,4 +13,4 @@ const Main: FC = () => {
 	)
 }
 
-export default Main;
+export default MainPage;

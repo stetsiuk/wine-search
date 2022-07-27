@@ -1,0 +1,39 @@
+.shop-item {
+	padding: 25px;
+	width: 100%;
+	border: 1px solid black;
+
+	&__header {
+		height: 40px;
+		display: flex;
+		align-items: center;
+		border-bottom: 1px solid #666666;
+	}
+
+	&__name {
+		font-weight: 700;
+		font-size: 16px;
+		min-width: 25%;
+	}
+
+	&__found {
+		padding: 5px 15px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border-radius: 5px;
+		font-weight: 700;
+		font-size: 12px;
+
+		&--multiple {
+			background-color: #CEFFDC;
+			color: #1D7E55;
+		}
+
+		&--single {
+			background-color: #FFEED7;
+			color: #C77E1F;
+		}
+	}
+
+}

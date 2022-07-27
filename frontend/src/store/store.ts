@@ -1,11 +1,12 @@
 import { Action, configureStore, ThunkAction } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 
-import mainReducer from './main/mainSlice';
+import searchReducer from './search/searchSlice';
+
 
 export const store = configureStore({
 	reducer: {
-		main: mainReducer
+		search: searchReducer
 	}
 })
 

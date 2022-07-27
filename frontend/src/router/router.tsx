@@ -1,13 +1,15 @@
 import { FC } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
-import Main from '../pages/main/main';
+import MainPage from '../pages/main/main';
+import WinesPage from '../pages/wines/wines';
 
 const AppRouter: FC = () => {
 	return (
 		<BrowserRouter>
 			<Routes>
-				<Route path='/' element={<Main/>}/>
+				<Route path='/' element={<MainPage/>}/>
+				<Route path='/wines' element={<WinesPage/>}/>
 			</Routes>
 		</BrowserRouter>
 	)

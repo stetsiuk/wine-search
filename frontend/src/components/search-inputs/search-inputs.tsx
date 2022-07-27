@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 
 import RowInputs from './row-inputs/row-inputs';
 import Button from '../button/button';
+
 import './search-input.scss';
 
 const SearchInputs: FC = () => {
@@ -30,7 +31,7 @@ const SearchInputs: FC = () => {
 		<div className='search'>
 			<div className='search__controls'>
 				<select className='search__country'>
-					<option value="de" selected>Germany</option>
+					<option value="de">Germany</option>
 					<option value="at">Austria</option>
 					<option value="ch">Switzerland</option>
 					<option value="us">USA</option>

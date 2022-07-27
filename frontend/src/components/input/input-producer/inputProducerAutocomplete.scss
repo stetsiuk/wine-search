@@ -1,6 +1,7 @@
 .input-producer {
 	position: relative;
 	width: 100%;
+
 	> input {
 		width: 100%;
 		border-radius: 5px;
@@ -8,12 +9,26 @@
 		padding: 5px;
 	}
 
+	//&__options {
+	//	width: 100%;
+	//	position: absolute;
+	//	top: 100%;
+	//	left: 0;
+	//	margin-top: 5px;
+	//	display: flex;
+	//	flex-direction: column;
+	//	flex-wrap: wrap;
+	//	background-color: white;
+	//	border: 1px solid rgba(0, 0, 0, 0.60);
+	//	border-radius: 5px;
+	//	box-shadow: 0 0 9px 2px rgba(0,0,0,0.57);
+	//	z-index: 999;
+	//}
+
 	&__options {
 		width: 100%;
 		position: absolute;
-		top: 100%;
 		left: 0;
-		margin-top: 5px;
 		display: flex;
 		flex-direction: column;
 		flex-wrap: wrap;
@@ -22,15 +37,24 @@
 		border-radius: 5px;
 		box-shadow: 0 0 9px 2px rgba(0,0,0,0.57);
 		z-index: 999;
+		&--above {
+			bottom: 100%;
+			margin-bottom: 5px;
+		}
+
+		&--below {
+			top: 100%;
+			margin-top: 5px;
+		}
 	}
 
 	&__item {
 		padding: 1px 6px;
 		width: 100%;
-		height: 30px;
+		height: 35px;
 		line-height: 30px;
 		font-size: 14px;
-		border-bottom: 1px solid;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.4);
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
@@ -41,9 +65,9 @@
 			cursor: pointer;
 			background-color: rgba(128, 128, 128, 0.4);
 		}
-		&--focused {
-			background-color: pink;
-		}
 
+		&--focused {
+			background-color: rgba(128, 128, 128, 0.4);
+		}
 	}
 }

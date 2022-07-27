@@ -1,0 +1,50 @@
+.filter-item {
+	position: relative;
+
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 400;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #666666;
+	&:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
+	}
+
+	&__switch {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 24px;
+		height: 24px;
+		&:hover {
+			transform: scale(1.1);
+			cursor: pointer;
+		}
+	}
+
+	&__name {
+		font-size: 16px;
+		font-weight: 700;
+	}
+
+	&__producer {
+		font-size: 15px;
+		margin-bottom: 15px;
+	}
+
+	&__container {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 15px;
+		margin-top: 5px;
+		margin-bottom: 15px;
+	}
+
+	&__property {
+		width: 28%;
+		display: flex;
+		align-items: center;
+		gap: 5px;
+	}
+}
