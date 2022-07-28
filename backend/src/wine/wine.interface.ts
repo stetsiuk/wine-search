@@ -4,12 +4,14 @@ export interface IWineMatch {
 	name: string;
 	isAffiliated: boolean;
 	amountWines: number;
-	wines: [Wine] | []
+	wines: {
+		[key: string]: Wine[] | []
+	}
 }
 
 export interface IWineData {
-	multipleMatch: IWineMatch[]
-	singleMatch: IWineMatch[]
+	multipleMatch: IWineMatch[];
+	singleMatch: IWineMatch[];
 }
 
 export interface IWine {
@@ -40,6 +42,10 @@ export interface IWineApiResponse {
 	};
 	duration: number;
 	remaining: number;
+}
+
+export interface ISelectedWines {
+	[key: string]: Wine[]
 }
 
 export enum WineCountries {

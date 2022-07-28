@@ -11,7 +11,13 @@ import { Wine } from './wine.entity';
 import { WineQueryDto } from './dto/wine-query.dto';
 import { createDynamicTypeOrmWhereQueries } from './wine.utils';
 import { WEIN_CC_API_URL, WEIN_CC_WINE_IMG_URL, WEIN_CC_WINE_URL } from './wine.constants';
-import { IWine, IWineApiResponse, IWineData, WineCountries } from './wine.interface';
+import {
+  ISelectedWines,
+  IWine,
+  IWineApiResponse,
+  IWineData,
+  WineCountries
+} from './wine.interface';
 import { SearchService } from '../search/search.service';
 import { CategoryService } from '../category/category.service';
 import { ProducerService } from '../producer/producer.service';
@@ -53,7 +59,7 @@ export class WineService {
     try {
       const {uniqueQuery, country} = dto;
 
-      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/150`, {
+      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/100`, {
         auth: {
           username: String(process.env.API_WEIN_USERNAME),
           password: String(process.env.API_WEIN_PASSWORD)
@@ -66,11 +72,11 @@ export class WineService {
         return await this.createWinesFromApi(wines, country);
 
       } else if (data.status === 'error') {
-        return new BadGatewayException(`Error ${data.result}`);
+        throw new BadGatewayException(`Error ${data.result}`);
       }
-      return new BadGatewayException(String(data));
+      throw new BadGatewayException(String(data));
     } catch (e) {
-     return new BadGatewayException(e.message);
+     throw new BadGatewayException(e.message);
     }
   }
 
@@ -122,7 +128,7 @@ export class WineService {
   private async selectWines (dto: WineQueryDto) {
     const {queries, country} = dto;
 
-    let selectedWines: Array<Wine[]> = [];
+    let selectedWines: ISelectedWines = {};
 
     for (let i = 0; i < queries.length; i++) {
 
@@ -130,7 +136,9 @@ export class WineService {
         where: createDynamicTypeOrmWhereQueries(queries[i], country)
       });
 
-      selectedWines.push(searchWine);
+      const key = Object.values(queries[i]).join('--')
+
+      selectedWines[key] = searchWine;
     }
 
     const aggregatedWines = await this.aggregateWines(selectedWines);
@@ -138,21 +146,21 @@ export class WineService {
     return this.sortWines(aggregatedWines);
   }
 
-  private async aggregateWines (wines: Wine[][]) {
+  private async aggregateWines (wines: ISelectedWines) {
 
     let foundMerchants: string[][] = [];
 
-    for (let i = 0; i < wines.length; i++) {
+    for (let value of Object.values(wines)) {
       let sectionMerchants = [];
 
-      for (let j = 0; j < wines[i].length; j++) {
-        const merchant = wines[i][j].merchant.name;
+      value.forEach(item => {
+        const merchant = item.merchant.name;
 
         if (!sectionMerchants.includes(merchant)) {
-          sectionMerchants.push(merchant)
+          sectionMerchants.push(merchant);
         }
+      });
 
-      }
       foundMerchants.push(sectionMerchants);
     }
 
@@ -161,10 +169,10 @@ export class WineService {
       singleMatch: []
     };
 
-    for (let i = 0; i < wines.length; i++) {
-      for (let j = 0; j < wines[i].length; j++) {
+    for (let key of Object.keys(wines)) {
+      for (let i = 0; i < wines[key].length; i++) {
 
-        const wine = wines[i][j];
+        const wine = wines[key][i];
         const wineMerchant = wine.merchant.name;
         const isMerchantAffiliated = Boolean(wine.partner.id !== 1)
         const isMultipleMerchant = this.checkIsMultipleMerchant(wineMerchant, foundMerchants);
@@ -176,15 +184,19 @@ export class WineService {
             name: wineMerchant,
             isAffiliated: isMerchantAffiliated,
             amountWines: 0,
-            wines: []
+            wines: {}
           })
         }
 
         data[path].forEach((item, index) => {
           if (item.name === wineMerchant) {
+            if (data[path][index].wines.hasOwnProperty(key)) {
+              // @ts-ignore
+              data[path][index].wines[key].push(wine);
+            } else {
+              data[path][index].wines[key] = [wine];
+            }
             data[path][index].amountWines += 1
-            // @ts-ignore
-            data[path][index].wines.push(wine);
           }
         })
       }
@@ -196,14 +208,14 @@ export class WineService {
   private sortWines (wines: IWineData) {
 
     for (let key of Object.keys(wines)) {
-      wines[key].sort((a, b) => b.amountWines - a.amountWines)
+      wines[key].sort((a, b) => b.amountWines - a.amountWines);
     }
 
     for (let key of Object.keys(wines)) {
-      wines[key].sort((a, b) => Number(b.isAffiliated) - Number(a.isAffiliated))
+      wines[key].sort((a, b) => Number(b.isAffiliated) - Number(a.isAffiliated));
     }
 
-    return wines
+    return wines;
   }
 
   private checkIsMultipleMerchant (merchant, listMerchants) {
@@ -225,10 +237,9 @@ export class WineService {
           id: 1
         },
         createdAt: LessThan(new Date().toLocaleString())
-
       }
-    })
-    await this.wineRepository.delete(candidatesForDeletion.map(item => item.id))
+    });
+    await this.wineRepository.delete(candidatesForDeletion.map(item => item.id));
   }
 
   public async initVinocentralDB () {
