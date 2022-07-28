@@ -2,12 +2,18 @@ import React, { FC, useEffect, useState } from 'react';
 
 import RowInputs from './row-inputs/row-inputs';
 import Button from '../button/button';
-
+import { SearchCountries } from './search-countries';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { changeCountry } from '../../store/search/search.slice';
 import './search-input.scss';
 
 const SearchInputs: FC = () => {
+	const dispatch = useAppDispatch();
+	const country = useAppSelector(state => state.search.country);
 
 	const [vintage, setVintage] = useState(false);
+
+
 
 	useEffect(() => {
 		const vintageSettingsFromLocalStorage = localStorage.getItem('vintage')
@@ -30,12 +36,10 @@ const SearchInputs: FC = () => {
 	return (
 		<div className='search'>
 			<div className='search__controls'>
-				<select className='search__country'>
-					<option value="de">Germany</option>
-					<option value="at">Austria</option>
-					<option value="ch">Switzerland</option>
-					<option value="us">USA</option>
-					<option value="gb">Great Britain</option>
+				<select className='search__country' value={country} onChange={(e) => dispatch(changeCountry(e.target.value))}>
+					{SearchCountries.map((item, index) =>
+						<option key={index} value={item.value}>{item.name}</option>
+					)}
 				</select>
 				<div className='search__vintage'>
 					<span>Search vintage wines</span>

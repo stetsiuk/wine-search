@@ -4,9 +4,9 @@ import Header from '../../components/header/header';
 import Button from '../../components/button/button';
 import Toggle from '../../components/toggle/toggle';
 import Filter from '../../components/filter/filter';
-import './wines.scss';
-
 import ShopResult from '../../components/shop-result/shopResult';
+import Footer from '../../components/footer/footer';
+import './wines.scss';
 
 const WinesPage: FC<PropsWithChildren> = () => {
 
@@ -42,6 +42,8 @@ const WinesPage: FC<PropsWithChildren> = () => {
 					<ShopResult/>
 				</div>
 			</div>
+
+			<Footer/>
 		</>
 	);
 };

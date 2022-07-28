@@ -1,7 +1,7 @@
 import React, { FC, PropsWithChildren } from 'react';
 
-import './header.scss';
 import BackButton from '../button/back-button/backButton';
+import './header.scss';
 
 interface HeaderProps {
 	backText: string

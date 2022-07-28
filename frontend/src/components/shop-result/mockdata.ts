@@ -519,7 +519,7 @@ export const mockdata = {
 			]
 		}
 	],
-		"singleMatch": [
+	"singleMatch": [
 		{
 			"name": "vinocentral.de",
 			"isAffiliated": true,
