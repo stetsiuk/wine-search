@@ -1,5 +1,7 @@
 import React, { FC, PropsWithChildren, useState, KeyboardEvent } from 'react';
 
+import { useAppDispatch } from '../../../store/hooks';
+import { changeItemSearchWine } from '../../../store/search/search.slice';
 import { API } from '../../../utils/axios';
 import './inputProducerAutocomplete.scss';
 
@@ -7,10 +9,10 @@ import './inputProducerAutocomplete.scss';
 interface InputProducerProps {
 	value: string | undefined
 	index: number
-	handleChangeInputValue: (index: number, field: 'producer', value: string) => void;
 }
 
-const InputProducerAutocomplete: FC<PropsWithChildren<InputProducerProps>> = ({index, value, handleChangeInputValue}) => {
+const InputProducerAutocomplete: FC<PropsWithChildren<InputProducerProps>> = ({index, value}) => {
+	const dispatch = useAppDispatch();
 
 	const [options, setOptions] = useState<string[]>([]);
 
@@ -19,12 +21,12 @@ const InputProducerAutocomplete: FC<PropsWithChildren<InputProducerProps>> = ({i
 
 	const handleInputChange = async (value: string) => {
 		if (value.length >= 3) {
-			handleChangeInputValue(index, 'producer', value);
+			dispatch(changeItemSearchWine({index, field: 'producer', value}));
 			const {data} = await API.get(`/producer/${value}`);
 			setOptions(data);
 			return;
 		}
-		handleChangeInputValue(index, 'producer', value);
+		dispatch(changeItemSearchWine({index, field: 'producer', value}));
 		setOptions([])
 	}
 

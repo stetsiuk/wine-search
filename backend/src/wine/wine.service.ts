@@ -44,41 +44,41 @@ export class WineService {
 
   public async collectWines (dto: WineQueryDto) {
 
-    const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, dto.country, 24);
+    // const wasSearchMade = await this.searchService.checkWasSearchRequestMadeForPeriod(dto.uniqueQuery, dto.country, 24);
 
-    if (!wasSearchMade) {
-      await this.fetchWinesFromApi(dto);
-    }
+    // if (!wasSearchMade) {
+    //   await this.fetchWinesFromApi(dto);
+    // }
 
-    await this.searchService.create(dto.uniqueQuery, dto.country);
+    // await this.searchService.create(dto.uniqueQuery, dto.country);
 
     return await this.selectWines(dto);
   }
 
-  private async fetchWinesFromApi (dto: WineQueryDto) {
-    try {
-      const {uniqueQuery, country} = dto;
-
-      const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/100`, {
-        auth: {
-          username: String(process.env.API_WEIN_USERNAME),
-          password: String(process.env.API_WEIN_PASSWORD)
-        }
-      });
-
-      if (data.status === 'ok') {
-        const wines = [...Object.values(data.result)];
-
-        return await this.createWinesFromApi(wines, country);
-
-      } else if (data.status === 'error') {
-        throw new BadGatewayException(`Error ${data.result}`);
-      }
-      throw new BadGatewayException(String(data));
-    } catch (e) {
-     throw new BadGatewayException(e.message);
-    }
-  }
+  // private async fetchWinesFromApi (dto: WineQueryDto) {
+  //   try {
+  //     const {uniqueQuery, country} = dto;
+  //
+  //     const {data} = await this.httpService.axiosRef.get<IWineApiResponse>(`${WEIN_CC_API_URL}/${uniqueQuery}/${country}/standard/100`, {
+  //       auth: {
+  //         username: String(process.env.API_WEIN_USERNAME),
+  //         password: String(process.env.API_WEIN_PASSWORD)
+  //       }
+  //     });
+  //
+  //     if (data.status === 'ok') {
+  //       const wines = [...Object.values(data.result)];
+  //
+  //       return await this.createWinesFromApi(wines, country);
+  //
+  //     } else if (data.status === 'error') {
+  //       throw new BadGatewayException(`Error ${data.result}`);
+  //     }
+  //     throw new BadGatewayException(String(data));
+  //   } catch (e) {
+  //    throw new BadGatewayException(e.message);
+  //   }
+  // }
 
   private async createWinesFromApi(wines: IWine[], country: WineCountries) {
 

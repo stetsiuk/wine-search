@@ -1,16 +1,15 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import { WinesService } from './wines.service';
-import { ISearchWines } from '../search/search.interface';
+import { RootState } from '../hooks';
 
 
-export const fetchWines = createAsyncThunk(
-	'fetch/wines',
-	async (searchParams: ISearchWines[], {getState}) => {
+export const fetchWines = createAsyncThunk<any, undefined, {state: RootState}>(
+	'wine/fetchWines',
+	async (_, {getState}) => {
 		try {
-			const query = new URLSearchParams(searchParams);
-
-			const wines = WinesService.getWines(decodeURIComponent(query.toString()))
+			const { searchWines } = getState().search;
+			const wines = WinesService.getWines(searchWines)
 		} catch (e) {
 
 		}

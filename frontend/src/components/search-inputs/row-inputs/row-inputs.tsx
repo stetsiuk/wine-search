@@ -1,6 +1,8 @@
-import React, { FC, PropsWithChildren, useState } from 'react';
+import React, { FC, PropsWithChildren } from 'react';
 
 import InputProducerAutocomplete from '../../input/input-producer/inputProducerAutocomplete';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { deleteSearchWine, addSearchWine, changeItemSearchWine } from '../../../store/search/search.slice';
 import './row-inputs.scss';
 
 
@@ -8,53 +10,20 @@ interface IRowInputsProps {
 	vintage: boolean
 }
 
-interface SearchWines {
-	name?: string
-	producer?: string
-	vintage?: number | null
-	visibleAddButton: boolean
-}
+const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({ vintage }) => {
 
-
-const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
-
-	const [searchWines, setSearchWines] = useState<SearchWines[]>([{name: '', producer: '', vintage: null, visibleAddButton: true}])
-
-	const handleChangeInputValue = (index: number, field: 'name' | 'producer' | 'vintage', value: string | null) => {
-		setSearchWines(prevState => prevState.map((item, inx) => {
-			if (index === inx) {
-				return {
-					...item,
-					[field]: value
-				}
-			}
-			return item
-		}))
-	}
-
-	const handleAddSearchInput = (index: number) => {
-		if (searchWines[searchWines.length - 1].name || searchWines[searchWines.length - 1].producer) {
-			setSearchWines(prevState => {
-				let newState = [...prevState];
-				newState[index].visibleAddButton = false
-				newState.push({name: '', producer: '', vintage: null, visibleAddButton: true})
-				return newState
-			})
-		}
-	}
+	const dispatch = useAppDispatch();
+	const {searchWines} = useAppSelector(state => state.search);
 
 	const handleChangeVintageInput = (index: number, value: string) => {
 		if (value === '') {
-			handleChangeInputValue(index, 'vintage', null)
+			dispatch(changeItemSearchWine({index, field: 'vintage', value: null}))
 		}
 		if (Number(value) && value.length <= 4) {
-			handleChangeInputValue(index, 'vintage', value)
+			dispatch(changeItemSearchWine({index, field: 'vintage', value}))
 		}
 	}
 
-	const handleDeleteSearchInput = (index: number) => {
-		setSearchWines(prevState => prevState.filter((i, idx) => index !== idx))
-	}
 
 	return (
 		<div className='row-container'>
@@ -64,13 +33,12 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 						type='text'
 						placeholder='Name'
 						value={searchWines[index].name}
-						onChange={(e) => handleChangeInputValue(index, 'name', e.target.value)}
+						onChange={(e) => dispatch(changeItemSearchWine({index, field: 'name', value: e.target.value}))}
 					/>
 
 					<InputProducerAutocomplete
 						value={searchWines[index].producer}
 						index={index}
-						handleChangeInputValue={handleChangeInputValue}
 					/>
 
 					{vintage && (
@@ -86,9 +54,9 @@ const RowInputs: FC<PropsWithChildren<IRowInputsProps>> = ({vintage}) => {
 
 					<div className='row-control'>
 						{item.visibleAddButton
-							? <button className='row-btn' onClick={() => handleAddSearchInput(index)}><span>+</span></button>
+							? <button className='row-btn' onClick={() => dispatch(addSearchWine(index))}><span>+</span></button>
 							: <div>
-								<button className='row-btn' onClick={() => handleDeleteSearchInput(index)}><span>-</span></button>
+								<button className='row-btn' onClick={() => dispatch(deleteSearchWine(index))}><span>-</span></button>
 							</div>
 						}
 					</div>

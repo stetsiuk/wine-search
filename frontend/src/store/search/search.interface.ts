@@ -9,3 +9,9 @@ export interface ISearchWines {
 	vintage?: number | null
 	visibleAddButton: boolean
 }
+
+export interface IPayloadChangeSearchItem {
+	index: number
+	field: 'name' | 'producer' | 'vintage'
+	value: string | null
+}

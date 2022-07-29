@@ -18,9 +18,9 @@ export class WineQueryDto {
   @IsNotEmpty()
   queries: Query[];
 
-  @IsString()
-  @IsNotEmpty()
-  uniqueQuery: string
+  // @IsString()
+  // @IsNotEmpty()
+  // uniqueQuery: string
 
   @IsEnum(
       WineCountries,
